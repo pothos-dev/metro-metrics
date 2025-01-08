@@ -2,15 +2,17 @@ import { loadHexagons } from "$lib/db"
 import { type Config } from "$lib/types"
 
 export async function POST({ params, request }) {
-  let t1 = new Date()
   const config: Config = await request.json()
-  const hexagons = await loadHexagons(params.city, config)
 
-  let t2 = new Date()
+  const { hexagons, elapsed, statement } = await loadHexagons(
+    params.city,
+    config
+  )
 
   const data = {
     hexagons,
-    time: t2.getTime() - t1.getTime(),
+    elapsed,
+    statement,
   }
 
   return new Response(JSON.stringify(data))

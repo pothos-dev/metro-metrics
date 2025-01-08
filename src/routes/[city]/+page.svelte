@@ -72,9 +72,10 @@
 <script lang="ts">
   import { page } from "$app/stores"
   import { untrack } from "svelte"
-  import type { Config } from "$lib/types"
+  import type { Config, TooltipCategory } from "$lib/types"
   import ConfigEditor from "./ConfigEditor.svelte"
-  import { first } from "lodash-es"
+  import { first, round } from "lodash-es"
+  import type { FeatureLike } from "ol/Feature"
 
   const { data } = $props()
   const boundary = toGeometry(data.city.geom)
@@ -119,31 +120,26 @@
       body: JSON.stringify(config),
     })
 
-    const { hexagons, time }: { hexagons: any[]; time: number } =
+    const {
+      hexagons,
+      elapsed,
+      statement,
+    }: { hexagons: any[]; elapsed: number; statement: string } =
       await response.json()
 
-    queryTime = time
+    console.log(statement)
+    queryTime = elapsed
 
     const features = hexagons.map((hexagon) => {
-      const { id, geom, percent, ...rest } = hexagon
       return new Feature({
-        id,
-        geometry: toGeometry(geom),
-        percent,
-        ...rest,
+        ...hexagon,
+        geometry: toGeometry(hexagon.geom),
       })
     })
 
     hexLayer = createHexagonLayer(features)
     map.addLayer(hexLayer)
   }
-
-  $effect(() => {
-    untrack(() => {
-      map.setTarget("map")
-      refetchHexagons()
-    })
-  })
 
   $effect(() => {
     // Restore from URL
@@ -160,26 +156,59 @@
     history.pushState({}, "", url)
   })
 
+  $effect(() => {
+    untrack(() => {
+      map.setTarget("map")
+      refetchHexagons()
+    })
+  })
+
   let tooltip: HTMLElement | null = null
+  let hoverHex: FeatureLike | null = $state(null)
   map.on("pointermove", (e) => {
     const hexagon = first(map.getFeaturesAtPixel(e.pixel))
-    if (hexagon) {
-      tooltip!.innerHTML = Object.entries(hexagon.getProperties())
-        .filter(([key]) => key != "geometry")
-        .map(([key, value]) => `<span>${key}: ${value}</span>`)
-        .join("<br>")
-      tooltip!.style.left = `${e.pixel[0] + 10}px`
-      tooltip!.style.top = `${e.pixel[1] + 10}px`
+    if (!hexagon) {
+      hoverHex = null
+      return
     }
+
+    tooltip!.style.left = `${e.pixel[0] + 10}px`
+    tooltip!.style.top = `${e.pixel[1] + 10}px`
+    hoverHex = hexagon
   })
 </script>
 
 <div class="flex h-full w-full flex-row">
   <ConfigEditor bind:config onSubmit={refetchHexagons} />
   <div id="map" class="relative flex-1">
-    <div bind:this={tooltip} class="absolute left-0 top-0 z-10 bg-white"></div>
-    <div class="absolute right-0 top-0 z-10 bg-white">
-      <p>Time: {queryTime}ms</p>
+    <div
+      bind:this={tooltip}
+      class="absolute left-0 top-0 z-10 w-64 bg-white p-2 text-black"
+    >
+      {#if hoverHex}
+        {@const tooltipCategories = hoverHex.get("categories")}
+        {@const tooltipPercent = hoverHex.get("percent")}
+        {@const id = hoverHex.get("id")}
+        <div class="flex flex-row justify-between">
+          <p class="font-bold">Hexagon {id}</p>
+          <p>{round(tooltipPercent)}%</p>
+        </div>
+        {#each tooltipCategories as category}
+          <div class="flex flex-row justify-between">
+            <p class="font-bold">{category.category}</p>
+            <p>{round(category.totalWeight, 1)}</p>
+          </div>
+          {#each category.features as feature}
+            <div class="flex flex-row justify-between">
+              <p>{feature.column}: {feature.value} ({feature.count})</p>
+              <p>{round(feature.weight, 1)}</p>
+            </div>
+          {/each}
+        {/each}
+      {/if}
+    </div>
+    <div class="absolute right-0 top-0 z-10 bg-white text-black">
+      <p>Time: {round(queryTime)}ms</p>
     </div>
   </div>
 </div>

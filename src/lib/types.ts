@@ -24,3 +24,16 @@ export type POI = {
   includePoints: boolean
   includeLines: boolean
 }
+
+export type GeometryType = "point" | "line" | "polygon"
+
+export type TooltipCategory = {
+  category: string
+  totalWeight: number
+  features: {
+    column: string
+    value: string
+    weight: number
+    count: number
+  }[]
+}

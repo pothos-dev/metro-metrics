@@ -1,18 +1,6 @@
 <script lang="ts">
   import type { Category, Config, POI } from "$lib/types"
 
-  const amenityOptions = [
-    "doctors",
-    "dentist",
-    "hospital",
-    "pharmacy",
-    "school",
-    "college",
-    "education_centre",
-    "kindergarten",
-    "university",
-  ]
-
   let {
     config = $bindable(),
     onSubmit,
@@ -61,9 +49,9 @@
   }
 </script>
 
-<div class="flex min-h-full w-[650px] flex-col overflow-y-auto p-2">
+<div class="flex min-h-full flex-col overflow-y-auto p-2">
   {#each config.categories as category}
-    <div class="bg-base-300 flex flex-col p-4 shadow-sm">
+    <div class="flex flex-col bg-base-300 p-4 shadow-sm">
       <div class="flex items-end gap-1">
         <input
           class="checkbox mb-2"
@@ -182,7 +170,7 @@
         </div>
       {/each}
       <button
-        class="btn btn-wide btn-success mt-4"
+        class="btn btn-success btn-wide mt-4"
         onclick={() => addPOI(category)}
       >
         Add Element
@@ -190,7 +178,7 @@
     </div>
   {/each}
 
-  <button class="btn btn-wide btn-success" onclick={addCategory}>
+  <button class="btn btn-success btn-wide" onclick={addCategory}>
     Add Category
   </button>
 
