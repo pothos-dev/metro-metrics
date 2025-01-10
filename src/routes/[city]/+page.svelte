@@ -124,10 +124,13 @@
       hexagons,
       elapsed,
       statement,
-    }: { hexagons: any[]; elapsed: number; statement: string } =
+      error,
+    }: { hexagons: any[]; elapsed: number; statement: string; error: string } =
       await response.json()
 
     console.log(statement)
+    if (error) console.error(error)
+
     queryTime = elapsed
 
     const features = hexagons.map((hexagon) => {

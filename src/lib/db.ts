@@ -52,7 +52,10 @@ export async function loadHexagons(cityName: string, config: Config) {
       ])
 
       const feature: Features = {
-        name: [category.name, poi.column, poi.value].join("__").toLowerCase(),
+        name: [category.name, poi.column, poi.value]
+          .join("__")
+          .replaceAll(" ", "_")
+          .toLowerCase(),
         weight: poi.weight * category.weight,
         maxCount: poi.maxCount,
         joinTables: [],
@@ -67,6 +70,7 @@ export async function loadHexagons(cityName: string, config: Config) {
 
         const tableName = [category.name, poi.column, poi.value, geometryType]
           .join("__")
+          .replaceAll(" ", "_")
           .toLowerCase()
 
         const query = `
@@ -150,22 +154,34 @@ export async function loadHexagons(cityName: string, config: Config) {
     { language: "postgresql" }
   )
 
-  const t1 = performance.now()
-  const hexagons: {
+  let hexagons: {
     id: string
     geom: string
     [key: string]: string
-  }[] = await sql.unsafe(statement)
+  }[] = []
+  let error = ""
+
+  const t1 = performance.now()
+  try {
+    hexagons = await sql.unsafe(statement)
+  } catch (e: any) {
+    error = `Error: ${e.toString()}`
+  }
   const t2 = performance.now()
   const elapsed = t2 - t1
 
-  console.log("--------------------------------")
-  console.log(statement)
-  console.log("--------------------------------")
-  console.log(`Elapsed: ${elapsed}ms`)
+  console.log(
+    [
+      "--------------------------------",
+      statement,
+      "--------------------------------",
+      `Elapsed: ${elapsed}ms`,
+    ].join("\n")
+  )
 
   return {
     statement,
+    error,
     elapsed,
     hexagons: hexagons.map((hexagon) => {
       let hexWeight = 0
