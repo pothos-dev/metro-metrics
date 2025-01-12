@@ -183,21 +183,15 @@ export async function loadHexagons(cityName: string, config: Config) {
 
   const t1 = performance.now()
   try {
+    console.log("Running query...\n", statement)
+
     hexagons = await sql.unsafe(statement)
   } catch (e: any) {
     error = `Error: ${e.toString()}`
   }
   const t2 = performance.now()
   const elapsed = t2 - t1
-
-  console.log(
-    [
-      "--------------------------------",
-      statement,
-      "--------------------------------",
-      `Elapsed: ${elapsed}ms`,
-    ].join("\n")
-  )
+  console.log(`Elapsed: ${elapsed}ms`)
 
   let hexagonsMapped = hexagons.map((hexagon) => {
     let hexWeight = 0
