@@ -46,7 +46,9 @@ export async function loadHexagons(cityName: string, config: Config) {
       if (!category.enabled || !poi.enabled) continue
 
       if (poi.weight * category.weight > 0) {
-        totalWeight += poi.weight * category.weight
+        totalWeight +=
+          (poi.weight * category.weight) /
+          category.pois.filter((p) => p.enabled).length
       }
       maxRadius = Math.max(maxRadius, poi.maxDistance)
 
@@ -61,7 +63,9 @@ export async function loadHexagons(cityName: string, config: Config) {
           .join("__")
           .replaceAll(" ", "_")
           .toLowerCase(),
-        weight: poi.weight * category.weight,
+        weight:
+          (poi.weight * category.weight) /
+          category.pois.filter((p) => p.enabled).length,
         maxCount: poi.maxCount,
         joinTables: [],
       }
