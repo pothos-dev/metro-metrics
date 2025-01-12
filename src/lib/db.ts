@@ -42,7 +42,9 @@ export async function loadHexagons(cityName: string, config: Config) {
     for (const poi of category.pois) {
       if (!category.enabled || !poi.enabled) continue
 
-      totalWeight += poi.weight * category.weight
+      if (poi.weight * category.weight > 0) {
+        totalWeight += poi.weight * category.weight
+      }
       maxRadius = Math.max(maxRadius, poi.maxDistance)
 
       let geometryTypes = compact([
@@ -179,36 +181,43 @@ export async function loadHexagons(cityName: string, config: Config) {
     ].join("\n")
   )
 
+  let hexagonsMapped = hexagons.map((hexagon) => {
+    let hexWeight = 0
+    let hexCategories = {} as Record<string, TooltipCategory>
+
+    for (const feature of features) {
+      const count = Number(hexagon[feature.name] || "0")
+      const weight = (count / feature.maxCount) * feature.weight
+      hexWeight += weight
+
+      const [category, column, value] = feature.name.split("__")
+      hexCategories[category] ??= { category, totalWeight: 0, features: [] }
+      hexCategories[category].totalWeight += weight
+      hexCategories[category].features.push({
+        column,
+        value,
+        weight,
+        count,
+      })
+    }
+
+    return {
+      id: hexagon.id,
+      geom: hexagon.geom,
+      categories: Object.values(hexCategories),
+      percent: Math.round((hexWeight / totalWeight) * 100),
+    }
+  })
+
+  const minPercent = Math.min(...hexagonsMapped.map((hex) => hex.percent))
+  const maxPercent = Math.max(...hexagonsMapped.map((hex) => hex.percent))
+
   return {
     statement,
     error,
     elapsed,
-    hexagons: hexagons.map((hexagon) => {
-      let hexWeight = 0
-      let hexCategories = {} as Record<string, TooltipCategory>
-
-      for (const feature of features) {
-        const count = Number(hexagon[feature.name] || "0")
-        const weight = (count / feature.maxCount) * feature.weight
-        hexWeight += weight
-
-        const [category, column, value] = feature.name.split("__")
-        hexCategories[category] ??= { category, totalWeight: 0, features: [] }
-        hexCategories[category].totalWeight += weight
-        hexCategories[category].features.push({
-          column,
-          value,
-          weight,
-          count,
-        })
-      }
-
-      return {
-        id: hexagon.id,
-        geom: hexagon.geom,
-        categories: Object.values(hexCategories),
-        percent: Math.round((hexWeight / totalWeight) * 100),
-      }
-    }),
+    hexagons: hexagonsMapped,
+    minPercent,
+    maxPercent,
   }
 }

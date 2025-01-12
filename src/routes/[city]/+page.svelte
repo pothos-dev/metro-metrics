@@ -40,11 +40,13 @@
         "fill-color": [
           "interpolate",
           ["linear"],
-          ["get", "percent"],
+          ["get", "scale"],
           0,
-          "#00000000",
-          100,
-          "#ff0000ff",
+          "#ff000044",
+          0.5,
+          "#ffff0088",
+          1,
+          "#44ff44ff",
         ],
       },
     })
@@ -124,9 +126,17 @@
       hexagons,
       elapsed,
       statement,
+      maxPercent,
+      minPercent,
       error,
-    }: { hexagons: any[]; elapsed: number; statement: string; error: string } =
-      await response.json()
+    }: {
+      hexagons: any[]
+      elapsed: number
+      statement: string
+      error: string
+      maxPercent: number
+      minPercent: number
+    } = await response.json()
 
     console.log(statement)
     if (error) console.error(error)
@@ -136,6 +146,7 @@
     const features = hexagons.map((hexagon) => {
       return new Feature({
         ...hexagon,
+        scale: (hexagon.percent - minPercent) / (maxPercent - minPercent),
         geometry: toGeometry(hexagon.geom),
       })
     })

@@ -71,8 +71,6 @@
           <input
             class="input input-sm input-bordered w-20"
             type="number"
-            min={0}
-            step={0.1}
             bind:value={category.weight}
           />
         </label>
