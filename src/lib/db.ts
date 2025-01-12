@@ -36,7 +36,10 @@ export async function loadHexagons(cityName: string, config: Config) {
 
   let totalWeight = 0
   let maxRadius = 0
-  const usedColumns = new Map<GeometryType, Set<string>>()
+
+  type ColumnName = string
+  type ColumnValue = string
+  const usedColumns = new Map<GeometryType, Map<ColumnName, Set<ColumnValue>>>()
 
   for (const category of config.categories) {
     for (const poi of category.pois) {
@@ -66,9 +69,13 @@ export async function loadHexagons(cityName: string, config: Config) {
 
       for (const geometryType of geometryTypes) {
         if (!usedColumns.has(geometryType)) {
-          usedColumns.set(geometryType, new Set())
+          usedColumns.set(geometryType, new Map())
         }
-        usedColumns.get(geometryType)!.add(poi.column)
+        const columnMap = usedColumns.get(geometryType)!
+        if (!columnMap.has(poi.column)) {
+          columnMap.set(poi.column, new Set())
+        }
+        columnMap.get(poi.column)!.add(poi.value)
 
         const tableName = [category.name, poi.column, poi.value, geometryType]
           .join("__")
@@ -96,14 +103,25 @@ export async function loadHexagons(cityName: string, config: Config) {
 
   // Add the required CTEs for the geometry types that we used
   for (const geometryType of usedColumns.keys()) {
+    const columnMap = usedColumns.get(geometryType)!
+    const columnNames = Array.from(columnMap.keys())
+
     ctes.unshift({
       tableName: geometryType,
       query: `
         select
           feature.way as geom,
-          ${Array.from(usedColumns.get(geometryType)!).join(",")}
+          ${columnNames.join(",")}
         from planet_osm_${geometryType} feature, hexagon_bbox bbox
         where st_within(feature.way, bbox.geom)
+        and (
+          ${columnNames
+            .map((columnName) => {
+              const values = Array.from(columnMap.get(columnName)!)
+              return `feature.${columnName} in (${values.map((v) => `'${v}'`).join(",")})`
+            })
+            .join(" or ")}
+        )
       `,
     })
   }
