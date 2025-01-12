@@ -12,10 +12,10 @@
   function createTileLayer() {
     return new TileLayer({
       source: new StadiaMaps({
-        layer: "stamen_watercolor",
+        layer: "stamen_toner",
         apiKey: "1db73c1d-87b1-4581-b332-43563b7ab4bc",
       }),
-      className: "grayscale-[80%]",
+      // className: "grayscale-[100%]",
     })
   }
 
@@ -42,11 +42,11 @@
           ["linear"],
           ["get", "scale"],
           0,
-          "#ff000088",
+          "#ff0000dd",
           0.5,
-          "#ffff0088",
+          "#ffff00dd",
           1,
-          "#44ff4488",
+          "#44ff44dd",
         ],
       },
     })
