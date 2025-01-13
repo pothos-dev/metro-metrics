@@ -42,14 +42,22 @@ export async function loadHexagons(cityName: string, config: Config) {
   const usedColumns = new Map<GeometryType, Map<ColumnName, Set<ColumnValue>>>()
 
   for (const category of config.categories) {
-    for (const poi of category.pois) {
-      if (!category.enabled || !poi.enabled) continue
+    if (!category.enabled) continue
 
-      if (poi.weight * category.weight > 0) {
-        totalWeight +=
-          (poi.weight * category.weight) /
-          category.pois.filter((p) => p.enabled).length
+    const categoryWeight =
+      category.weight *
+      category.pois.reduce(
+        (acc, poi) => acc + (poi.enabled ? poi.weight : 0),
+        0
+      )
+
+    for (const poi of category.pois) {
+      if (!poi.enabled) continue
+
+      if (poi.weight * categoryWeight > 0) {
+        totalWeight += poi.weight * categoryWeight
       }
+
       maxRadius = Math.max(maxRadius, poi.maxDistance)
 
       let geometryTypes = compact([
@@ -63,9 +71,7 @@ export async function loadHexagons(cityName: string, config: Config) {
           .join("__")
           .replaceAll(" ", "_")
           .toLowerCase(),
-        weight:
-          (poi.weight * category.weight) /
-          category.pois.filter((p) => p.enabled).length,
+        weight: poi.weight * categoryWeight,
         maxCount: poi.maxCount,
         joinTables: [],
       }
