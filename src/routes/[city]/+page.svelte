@@ -212,7 +212,7 @@
             <p class="font-bold">{category.category}</p>
             <p>{round(category.totalWeight, 1)}</p>
           </div>
-          {#each category.features as feature}
+          {#each category.features.filter((f: any) => f.count > 0) as feature}
             <div class="flex flex-row justify-between">
               <p>{feature.column}: {feature.value} ({feature.count})</p>
               <p>{round(feature.weight, 1)}</p>
