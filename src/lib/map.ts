@@ -1,6 +1,8 @@
+import { CoordinateConverter } from "$lib/coordinates"
 import { queryNominatim } from "$lib/osm-api"
-import L from "leaflet"
+import L, { LatLng } from "leaflet"
 import "leaflet/dist/leaflet.css"
+import { range } from "lodash-es"
 
 const apiKey = "1db73c1d-87b1-4581-b332-43563b7ab4bc"
 const baseUrl =
@@ -29,5 +31,19 @@ export class Map {
       [minLat, minLon],
       [maxLat, maxLon],
     ])
+  }
+
+  getBounds() {
+    const bounds = this.map.getBounds()
+    return {
+      minLat: bounds.getSouth(),
+      minLon: bounds.getWest(),
+      maxLat: bounds.getNorth(),
+      maxLon: bounds.getEast(),
+    }
+  }
+
+  addPolygon(points: [number, number][]) {
+    new L.Polygon(points).addTo(this.map)
   }
 }

@@ -1,15 +1,28 @@
 <script lang="ts">
+  import { CoordinateConverter } from "$lib/coordinates"
+  import { generateHexGrid } from "$lib/hexagons"
   import { Map } from "$lib/map"
   import { onMount } from "svelte"
 
-  let map: Map | undefined
+  let map: Map
   onMount(() => {
     map = new Map("map", 47.0707, 15.4395, 13)
   })
 
   let searchTerm = $state("")
   async function search() {
-    await map?.seek(searchTerm)
+    await map.seek(searchTerm)
+  }
+  function scan() {
+    const { minLat, minLon, maxLat, maxLon } = map.getBounds()
+    const cc = new CoordinateConverter(minLat, minLon)
+    const [left, top] = cc.toUTM(minLat, minLon)
+    const [right, bottom] = cc.toUTM(maxLat, maxLon)
+
+    const hexGrid = generateHexGrid(left, top, right, bottom, 500)
+    for (const points of hexGrid) {
+      map.addPolygon(points.map(([x, y]) => cc.toLatLon(x, y)))
+    }
   }
 </script>
 
@@ -21,6 +34,6 @@
   </form>
 
   <div class="absolute bottom-0 right-0 z-[1000] p-4">
-    <button class="btn btn-primary">Scan</button>
+    <button class="btn btn-primary" onclick={scan}>Scan</button>
   </div>
 </div>
