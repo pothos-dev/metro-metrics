@@ -1,24 +1,30 @@
-export async function queryNominatim(query: string): Promise<{
-  minLat: number
-  minLon: number
-  maxLat: number
-  maxLon: number
-}> {
+import L from "leaflet"
+
+export async function queryNominatim(query: string): Promise<L.LatLngBounds> {
   const result = await fetch(
     `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`
   ).then((data) => data.json())
 
   const [minLat, maxLat, minLon, maxLon] = result[0]!.boundingbox
-  return {
-    minLat: Number(minLat),
-    minLon: Number(minLon),
-    maxLat: Number(maxLat),
-    maxLon: Number(maxLon),
-  }
+  return L.latLngBounds([
+    [Number(minLat), Number(minLon)],
+    [Number(maxLat), Number(maxLon)],
+  ])
 }
 
-export async function queryOverpass<T>(query: string): Promise<T[]> {
-  query = `[out:json][timeout:90];${query}`
+export async function queryOverpass<T>(
+  bbox: L.LatLngBounds,
+  query: string
+): Promise<T[]> {
+  const bboxCoords = [
+    bbox.getSouth(),
+    bbox.getWest(),
+    bbox.getNorth(),
+    bbox.getEast(),
+  ]
+
+  query = `[out:json][timeout:90][bbox:${bboxCoords.join(",")}]; ${query}`
+
   const result = await fetch("https://overpass-api.de/api/interpreter", {
     method: "POST",
     body: "data=" + encodeURIComponent(query),
