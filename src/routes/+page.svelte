@@ -29,7 +29,13 @@
       tags: Record<string, any>
     }
 
-    const results = await queryOverpass<Result>(bbox, query)
+    const results = await queryOverpass<Result>(
+      [
+        [bbox.getSouth(), bbox.getWest()],
+        [bbox.getNorth(), bbox.getEast()],
+      ],
+      query
+    )
     const resultsWithFeature = results.map(({ center, tags }) => ({
       center,
       tags,
